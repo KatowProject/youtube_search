@@ -1,8 +1,10 @@
 const yts = require('yt-search');
 const ytsearch = require('@neeraj-x0/ytsearch');
-const { Builder, Browser, By, until } = require('selenium-webdriver');
+const { Builder, Browser, By, Key, until } = require('selenium-webdriver')
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
+const cheerio = require('cheerio');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,10 +23,10 @@ app.get('/search', async (req, res) => {
             videos
         });
     } catch (error) {
-        console.error(error);
         res.status(500).json({ error: 'An error occurred while searching.' });
     }
 });
+
 
 app.get('/searchv2', async (req, res) => {
     const { query } = req.query;
@@ -51,24 +53,6 @@ app.get('/search-selenium', async (req, res) => {
     }
 });
 
-async function getThumbnail(video) {
-    const selectors = [
-        '#thumbnail > yt-image > img',
-        'img#img',
-        '#thumbnail img'
-    ];
-
-    for (const selector of selectors) {
-        try {
-            const thumbnailElement = await video.findElement(By.css(selector));
-            return await thumbnailElement.getAttribute('src');
-        } catch (e) {
-            // Continue to the next selector
-        }
-    }
-
-    return 'Thumbnail not available';
-}
 
 async function seleniumYoutubeSearch(query, max_results = 25) {
     let driver;
@@ -78,42 +62,71 @@ async function seleniumYoutubeSearch(query, max_results = 25) {
         await driver.wait(until.elementLocated(By.id('video-title')), 10000);
 
         const data = [];
-        let lastHeight = await driver.executeScript("return document.documentElement.scrollHeight");
-
         while (data.length < max_results) {
-            // scroll down to load more results
-            await driver.executeScript("window.scrollTo(0, document.documentElement.scrollHeight);");
+            await driver.executeScript("window.scrollTo(0, document.getElementsByClassName('ytd-search')[0].scrollHeight)");
 
-            // wait for results to load
             await driver.sleep(2000); // wait for 2 seconds
 
-            // get video titles
             const videos = await driver.findElements({ css: 'ytd-video-renderer' });
+            console.log(videos.length);
+            if (videos.length >= max_results) {
+                for (const video of videos) {
+                    const title = await video.findElement(By.id('video-title')).getAttribute('title');
 
-            for (const video of videos) {
-                const title = await video.findElement(By.id('video-title')).getAttribute('title');
-                const link = await video.findElement(By.id('video-title')).getAttribute('href');
-                const thumbnail = await getThumbnail(video);
-                const durations = await video.findElements(By.className('badge-shape-wiz__text'));
-                const time = durations.length > 0 ? await durations[0].getText() : 'Unknown';
+                    const links = await video.findElements(By.id('video-title'));
+                    const link = await links[0].getAttribute('href');
+                    const URI = new URL(link);
+                    const idLink = URI.searchParams.get('v');
 
-                data.push({
-                    title,
-                    url: link,
-                    thumbnail,
-                    duration: time
-                });
+                    const thumbnail = `https://i.ytimg.com/vi/${idLink}/hqdefault.jpg`;
 
-                if (data.length >= max_results) {
-                    break;
+                    await driver.wait(until.elementLocated(By.css('.badge-shape-wiz__text')), 5000);
+                    let time = await video.findElement(By.css('.badge-shape-wiz__text')).getText();
+                    if (!time) {
+                        const html = await video.getAttribute('outerHTML');
+                        const $ = cheerio.load(html);
+
+                        time = $('span.style-scope.ytd-thumbnail-overlay-time-status-renderer').text().trim();
+                    }
+
+                    data.push({
+                        title,
+                        url: `https://www.youtube.com/watch?v=${idLink}`,
+                        id: idLink,
+                        thumbnail,
+                        duration: time
+                    });
+
+                    if (data.length >= max_results)
+                        break;
                 }
             }
+            // for (const video of videos) {
 
-            let newHeight = await driver.executeScript("return document.documentElement.scrollHeight");
-            if (newHeight === lastHeight) {
-                break; // no more content to load
-            }
-            lastHeight = newHeight;
+            //     const title = await video.findElement(By.id('video-title')).getAttribute('title');
+
+            //     const links = await video.findElements(By.id('video-title'));
+            //     const link = await links[0].getAttribute('href');
+            //     const URI = new URL(link);
+            //     const idLink = URI.searchParams.get('v');
+
+            //     const thumbnail = `https://i.ytimg.com/vi/${idLink}/hqdefault.jpg`;
+
+            //     await driver.wait(until.elementLocated(By.css('.badge-shape-wiz__text')), 5000);
+            //     let time = await video.findElement(By.css('.badge-shape-wiz__text')).getText();
+            //     if (!time) time = await video.findElement(By.xpath("//span[@class='style-scope ytd-thumbnail-overlay-time-status-renderer']")).getText();
+
+            //     data.push({
+            //         title,
+            //         url: `https://www.youtube.com/watch?v=${idLink}`,
+            //         id: idLink,
+            //         thumbnail,
+            //         duration: time
+            //     });
+
+            //     if (data.length >= max_results) {
+            //         break;
+            //     }
         }
 
         return data;
@@ -127,4 +140,5 @@ async function seleniumYoutubeSearch(query, max_results = 25) {
     }
 }
 
+// ...existing code...
 app.listen(PORT, '0.0.0.0', () => console.log(`Server is running on http://localhost:${PORT}`));
