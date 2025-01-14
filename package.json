@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.6",
+    "@types/selenium-webdriver": "^4.1.28",
     "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.3"
