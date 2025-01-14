@@ -1,14 +1,24 @@
 {
-  "name": "youtube_search",
+  "name": "youtube-search",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Get the search results from youtube with selenium",
+  "main": "dist/index.js",
   "scripts": {
-    "build": "rimraf ./dist && tsc"
+    "build": "rimraf ./dist && tsc",
+    "prepublish": "npm run build",
+    "publish": "npm publish"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "youtube",
+    "search",
+    "selenium"
+  ],
+  "homepage": "https://github.com/KatowProject/youtube_search",
+  "bugs": {
+    "url": "https://github.com/KatowProject/youtube_search/issues"
+  },
+  "author": "KatowProject",
+  "license": "MIT",
   "dependencies": {
     "cheerio": "^1.0.0",
     "selenium-webdriver": "^4.27.0"

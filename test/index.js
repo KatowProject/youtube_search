@@ -1,4 +1,4 @@
-const YoutubeSearch = require('../dist/index').default;
+const YoutubeSearch = require('youtube_search').default;
 
 (async () => {
     const YTS = new YoutubeSearch('edge', true);
