@@ -1,4 +1,4 @@
-import { Builder, Browser, By, Key, until } from 'selenium-webdriver';
+import { Builder, Browser, By, until } from 'selenium-webdriver';
 import chrome from 'selenium-webdriver/chrome';
 import firefox from 'selenium-webdriver/firefox';
 import edge from 'selenium-webdriver/edge';
@@ -81,7 +81,13 @@ class YoutubeSearch {
                     const URI = new URL(link);
                     const idLink = URI.searchParams.get('v');
 
-                    const thumbnail = `https://i.ytimg.com/vi/${idLink}/hqdefault.jpg`;
+                    const thumbnail = {
+                        default: `https://i.ytimg.com/vi/${idLink}/default.jpg`,
+                        hq: `https://i.ytimg.com/vi/${idLink}/hqdefault.jpg`,
+                        mq: `https://i.ytimg.com/vi/${idLink}/mqdefault.jpg`,
+                        sd: `https://i.ytimg.com/vi/${idLink}/sddefault.jpg`,
+                        maxres: `https://i.ytimg.com/vi/${idLink}/maxresdefault.jpg`
+                    };
 
                     await this.driver.wait(until.elementLocated(By.css('.badge-shape-wiz__text')), 5000);
                     let time = await video.findElement(By.css('.badge-shape-wiz__text')).getText();
@@ -91,6 +97,7 @@ class YoutubeSearch {
 
                         time = $('span.style-scope.ytd-thumbnail-overlay-time-status-renderer').text().trim();
                     }
+                    if (time == 'SHORTS') continue;
 
                     data.push({
                         title,
@@ -106,7 +113,10 @@ class YoutubeSearch {
             }
         }
 
-        return data;
+        return {
+            videoLength: data.length,
+            videos: data
+        };
     }
 }
 
