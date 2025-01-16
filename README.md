@@ -6,12 +6,12 @@ Simple search on youtube using selenium
 
 ## Installation
 ```bash
-npm install
+npm install yt-search-selenium
 ```
 
 ## Example
 ```js
-const YoutubeSearch = require('youtube_search').default;
+const YoutubeSearch = require('yt-search-selenium');
 
 (async () => {
     const YTS = new YoutubeSearch('edge', true);
