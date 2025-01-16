@@ -1,6 +1,6 @@
 {
   "name": "yt-search-selenium",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Get the search results from youtube with selenium",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
